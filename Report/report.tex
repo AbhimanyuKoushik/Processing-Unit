@@ -1,0 +1,144 @@
+% Processing Unit Report (LaTeX start)
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{float}
+
+% Listings configuration for Verilog
+\lstdefinelanguage{Verilog}{
+keywords={module, endmodule, input, output, wire, reg, always, @(posedge, if, else, case, endcase, begin, end, assign, parameter, localparam},
+sensitive=true,
+morecomment=[l]{//},
+morecomment=[s]{/*}{*/},
+morestring=[b]"
+}
+\lstset{
+language=Verilog,
+basicstyle=\ttfamily\small,
+keywordstyle=\bfseries\color{blue},
+commentstyle=\itshape\color{gray},
+stringstyle=\color{orange},
+breaklines=true,
+frame=single,
+numbers=left,
+numberstyle=\tiny,
+stepnumber=1,
+tabsize=2
+}
+
+\title{Design and Implementation of an RV64IMF Pipelined Processor with Integrated FPU}
+\author{Author Name \ Department / Institution}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Objectives}
+The primary objectives of this project are:
+\begin{itemize}
+\item Implement an RV64IMF processor core in Verilog that can be synthesized for an FPGA.
+\item Support the RISBUJ instruction formats and the course-provided RISC-V instruction subset (excluding system call and breakpoint instructions).
+\item Provide basic hazard management: data forwarding, pipeline stalls for load-use and long-latency operations, and simple branch prediction with recovery.
+\item Verify functionality through simulation and demonstrate operation on an FPGA board.
+\item Develop the processor in three phases: (1) functional non-pipelined core with FPU, (2) add a 5-stage pipeline with integer hazard handling, (3) integrate a non-blocking/pipelined FPU into the main pipeline.
+\end{itemize}
+
+\section{Project Specifications}
+
+\subsection{ISA and Instruction Support}
+The processor implements the RV64 base integer ISA plus the following extensions:
+\begin{itemize}
+\item \textbf{I}: RV64 integer base instructions (load/store, arithmetic, logical, control flow).
+\item \textbf{M}: Integer multiply and divide.
+\item \textbf{F}: Single-precision floating point (IEEE-754) operations — implemented via an FPU unit integrated into the pipeline.
+\end{itemize}
+All R-type, I-type, S-type, B-type, U-type, and J-type instruction encodings described by the RISBU formats (as provided in the class RISC-V card) will be implemented, except \texttt{ecall} and \texttt{ebreak} which are intentionally omitted.
+
+\section{Architecture Overview}
+Include an architectural block diagram here describing the major components:
+\begin{itemize}
+\item Instruction fetch unit (PC generation, instruction memory interface, branch prediction unit).
+\item Register file (integer and floating-point register files; note: F extension uses separate FP registers but can be architected as a single register file with type handling — decide in implementation).
+\item Integer ALU with multiply/divide unit (M extension); optionally a separate multiplier pipeline.
+\item Floating-Point Unit (FPU): single-precision adder/subtractor, multiplier, divide/sqrt (optional) and conversion units.
+\item Data memory interface (AXI-lite or simple synchronous SRAM interface depending on FPGA board).
+\item Pipeline control and hazard detection unit (forwarding paths, stall logic).
+\end{itemize}
+
+\section{Pipeline Design}
+This project follows a staged pipeline introduction. The baseline pipeline will be the classical 5-stage RISC pipeline:
+\begin{enumerate}
+\item Fetch (IF)
+\item Decode/Register Read (ID)
+\item Execute/ALU (EX)
+\item Memory Access (MEM)
+\item Write Back (WB)
+\end{enumerate}
+
+For floating-point operations the FPU may have a multi-cycle or pipelined implementation. During Phase 2 FP instructions will not be fully pipelined into the main pipeline; instead they will be handled via a blocking (stalling) FPU interface. Phase 3 will integrate the FPU such that FP instructions can flow through the pipeline with appropriate forwarding and hazard handling.
+
+\subsection{Hazard Management}
+\paragraph{Data Hazards:} Implement standard forwarding paths from ALU/MEM/WB outputs to ALU inputs in ID/EX as required. When forwarding cannot resolve hazards (e.g., load-use hazards), the control logic will insert a bubble (stall).
+
+\paragraph{Control Hazards:} A simple static branch predictor (e.g., predict-not-taken or a 1-bit bimodal predictor) will be implemented in the IF/ID stage to reduce branch penalties. On misprediction the pipeline will flush incorrectly fetched instructions and update the PC.
+
+\section{Floating-Point Unit (FPU)}
+\subsection{Design Goals}
+\begin{itemize}
+\item Support single-precision (IEEE-754) arithmetic: add/sub, mul, fma (if feasible), comparisons, loads/stores, and conversions between integer and float.
+\item Provide interfaces for exception flags and rounding modes (to the extent required by the course specification).
+\item Offer both a simple single-cycle (for early phases) and a more efficient pipelined or multi-cycle implementation for final integration.
+\end{itemize}
+
+\subsection{Integration Strategy}
+During Phase 1, the FPU will be implemented as a functional unit callable from the EX stage but may take multiple cycles to complete, blocking the pipeline (stalling). During Phase 3 the FPU will present a pipelined interface with result-bypassing so that later instructions can make use of results via forwarding without unnecessary stalls.
+
+\section{Implementation Plan (Phases)}
+\subsection{Phase 1: Functional Processor without Pipelining (with FPU)}
+\begin{itemize}
+\item Implement a single-cycle or multi-cycle non-pipelined processor (control simpler to verify).
+\item Implement FPU as a multi-cycle combinational/sequential unit accessed from EX stage (pipeline stalls entire processor while FPU operates).
+\item Develop Verilog modules: instruction memory (ROM), datapath, control unit, register files, simple bus to external memory.
+\item Deliverables: RTL code, simulation testbenches for integer and FP instruction sets, synthesis report on FPGA.
+\end{itemize}
+
+\subsection{Phase 2: Pipeline Implementation without Pipelined FP}
+\begin{itemize}
+\item Convert datapath to a 5-stage pipelined design with registers between stages.
+\item Implement data forwarding and hazard detection for integer instructions.
+\item Integrate branch prediction and misprediction recovery logic.
+\item FPU remains non-pipelined; FP instructions will cause the pipeline to stall until FPU finishes.
+\item Deliverables: pipelined RTL, updated testbench, performance measurements (CPI estimates), FPGA bitstream.
+\end{itemize}
+
+\subsection{Phase 3: FP Integration into Pipeline}
+\begin{itemize}
+\item Rework FPU into a pipelined or non-blocking multi-cycle unit with result tagging so that multiple FP operations can be in-flight.
+\item Add forwarding paths for FP results into integer and FP instructions as required.
+\item Handle FP-specific exceptions and rounding modes in control/status registers.
+\item Deliverables: fully integrated RTL, extended testbench including concurrent integer+FP sequences, final FPGA bitstream, performance evaluation.
+\end{itemize}
+
+\section{Verification and Testing}
+\subsection{Simulation}
+\begin{itemize}
+\item Unit-level testbenches for ALU, FPU, register files, and memory interfaces.
+\item Instruction-level tests using assembly programs that exercise all implemented instructions (edge cases, saturations, corner cases for FP like NaN/Inf/denormals if supported).
+\item Automated regression and self-checking testbenches where simulation results are compared against a reference model (e.g., spike or a golden C model).
+\end{itemize}
+
+\end{document}
+
