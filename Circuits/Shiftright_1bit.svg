@@ -25,7 +25,7 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="0.54929737"
-     inkscape:cx="3561.823"
+     inkscape:cx="3560.9127"
      inkscape:cy="2423.0955"
      inkscape:window-width="1920"
      inkscape:window-height="1128"
@@ -179,9 +179,7 @@
        y="540.10712"
        id="text19"><tspan
          sodipodi:role="line"
-         id="tspan6"
-         x="831.88519"
-         y="540.10712">1</tspan></text>
+         id="tspan3">0</tspan></text>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.553669px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 848.99021,535.83086 h 67.70618"
@@ -368,7 +366,7 @@
        id="text15"><tspan
          sodipodi:role="line"
          id="tspan15"
-         style="stroke-width:2.5"></tspan></text>
+         style="stroke-width:2.5" /></text>
     <rect
        style="fill:none;stroke:url(#linearGradient17);stroke-width:0.7;stroke-dasharray:none"
        id="rect17"
