@@ -1,144 +1,162 @@
-% Processing Unit Report (LaTeX start)
-\documentclass[11pt,a4paper]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
-\usepackage{geometry}
-\geometry{margin=1in}
+\documentclass{article}
 \usepackage{graphicx}
-\usepackage{amsmath,amssymb}
-\usepackage{booktabs}
-\usepackage{hyperref}
+\usepackage{amsmath}
 \usepackage{listings}
-\usepackage{xcolor}
-\usepackage{caption}
 \usepackage{float}
+\usepackage[margin=1in]{geometry}
 
-% Listings configuration for Verilog
-\lstdefinelanguage{Verilog}{
-keywords={module, endmodule, input, output, wire, reg, always, @(posedge, if, else, case, endcase, begin, end, assign, parameter, localparam},
-sensitive=true,
-morecomment=[l]{//},
-morecomment=[s]{/*}{*/},
-morestring=[b]"
-}
+\title{CS2323 Computer Architecture\\Mid-Term Submission - RISC-V Processor Implementation}
+\author{Abhimanyu Koushik Garimella\\EE24BTECH11024}
+\date{October 2025}
+
 \lstset{
-language=Verilog,
-basicstyle=\ttfamily\small,
-keywordstyle=\bfseries\color{blue},
-commentstyle=\itshape\color{gray},
-stringstyle=\color{orange},
-breaklines=true,
-frame=single,
-numbers=left,
-numberstyle=\tiny,
-stepnumber=1,
-tabsize=2
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
 }
-
-\title{Design and Implementation of an RV64IMF Pipelined Processor with Integrated FPU}
-\author{Author Name \ Department / Institution}
-\date{\today}
 
 \begin{document}
 
 \maketitle
 
-\tableofcontents
+\section*{Introduction}
 
-\section{Objectives}
-The primary objectives of this project are:
+This document details the progress on the RV64IMD processor implementation project. The focus has been on designing and implementing the core datapath components. These fundamental building blocks form the foundation of the non-pipelined baseline processor that will eventually be extended to support the full RV64IMD instruction set with pipelining. The complete datapath designed for a single-cycle processor is presented below.
+
+\section*{Arithmetic and Logic Unit}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{ALU.png}
+    \caption{ALU Block}
+    \label{fig:alu}
+\end{figure}
+
+The task of the ALU is to take the input values from the input ports, perform the specific operation specified by the ALUOp, and send back the output. All operations specified in the RISC-V instruction set are implemented. Each operation was performed directly in Verilog using the provided operations, with careful consideration given to understanding how each operation is implemented. The output for all operations is calculated simultaneously, and a final multiplexer is used to select the correct output, with the select lines for the multiplexer being the ALUOp codes.
+
+\subsection*{Addition-Subtraction Block}
+
+The task of the Addition-Subtraction block is to perform addition, subtraction, set less than, and set less than unsigned operations. For addition and subtraction, a basic 64-bit addition block is used. One of the inputs is taken directly from the inputs of the ALU, while the other input is selected by a multiplexer whose inputs are the second input and its negative. The select line for the multiplexer comes from the ALU Control.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Addsub.png}
+    \caption{Addition-Subtraction Block}
+    \label{fig:addsub}
+\end{figure}
+
+\subsection*{Shift Operations}
+
+Shift operations are essential for bit manipulation and multiplication/division by powers of 2. The RISC-V ISA specifies three types of shifts: logical left, logical right, and arithmetic right.
+
+The shift left operation performs logical left shifts by inserting zeros from the right. For a 64-bit operand, the shift amount ranges from 0 to 63 bits. It was designed as shown below.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{ShiftLeft_nbits.png}
+    \caption{Shift Left Block}
+    \label{fig:shiftleft}
+\end{figure}
+
+The shift right operation performs logical right shifts by inserting zeros or ones from the left. For a 64-bit operand, the shift amount ranges from 0 to 63 bits. It was designed as shown below.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Shiftright_nbits.png}
+    \caption{Shift Right Block}
+    \label{fig:shiftright}
+\end{figure}
+
+A control signal selects between logical and arithmetic mode. For arithmetic shifts, the most significant bit is used as the fill value.
+
+\subsection*{Unsigned Multiplier}
+
+The M-extension of RISC-V requires hardware multiplication support. The multiplier unit implements unsigned multiplication for 64-bit operands.
+
+The multiplier uses an iterative add-and-shift algorithm. For two \(n\)-bit numbers \(A\) and \(B\), the product is computed as:
+\[
+P = \sum_{i=0}^{n-1} A \cdot B_i \cdot 2^i
+\]
+where \(B_i\) is the \(i\)-th bit of \(B\).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Unsigned_multiplier.png}
+    \caption{Unsigned Multiplier Architecture}
+    \label{fig:multiplier}
+\end{figure}
+Once all the partial sums are calculated, they are added in parallel manner.
+
+For signed multiplication (MULH, MULHSU), the operands are converted to unsigned values, multiplied, and the result is adjusted based on the original signs.
+
+\subsection*{Unsigned Divider}
+
+Division is more complex than multiplication and requires careful handling of edge cases. The divider implements unsigned division and produces both quotient and remainder.
+
+The divider uses a restoring division algorithm. For dividend \(N\) and divisor \(D\), it computes quotient \(Q\) and remainder \(R\) such that:
+\[
+N = Q \cdot D + R, \quad 0 \leq R < D
+\]
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Unsigned_divider.png}
+    \caption{Unsigned Divider Architecture}
+    \label{fig:divider}
+\end{figure}
+
+The algorithm works by repeatedly subtracting the divisor from the dividend. If the subtraction produces a non-negative result, a 1 is placed in the quotient and the remainder is updated. Otherwise, a 0 is placed in the quotient and the remainder is restored.
+\section*{Explaining the Datapath}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{datapath.png}
+    \caption{Complete Single-Cycle Processor Datapath}
+    \label{fig:datapath}
+\end{figure}
+
+\subsection*{R-format Instruction Path}
+
 \begin{itemize}
-\item Implement an RV64IMF processor core in Verilog that can be synthesized for an FPGA.
-\item Support the RISBUJ instruction formats and the course-provided RISC-V instruction subset (excluding system call and breakpoint instructions).
-\item Provide basic hazard management: data forwarding, pipeline stalls for load-use and long-latency operations, and simple branch prediction with recovery.
-\item Verify functionality through simulation and demonstrate operation on an FPGA board.
-\item Develop the processor in three phases: (1) functional non-pipelined core with FPU, (2) add a 5-stage pipeline with integer hazard handling, (3) integrate a non-blocking/pipelined FPU into the main pipeline.
+    \item R-format instructions execute through a well-defined datapath sequence. The instruction is first retrieved from the Instruction Memory, where the bits corresponding to the source and destination registers are extracted and forwarded to the Register File. The Register File outputs the values stored in the specified source registers.
+
+    \item The Control Unit (not shown in the diagram) configures the \texttt{ALUSrc} control signal such that the multiplexer selects the source register value rather than an immediate. These operands are then routed to the ALU-FPU block, where the ALU-FPU control signals determine the specific arithmetic or logical operation to be performed. The ALU-FPU output is connected to the address port of the Data Memory; however, the \texttt{MemRead} and \texttt{MemWrite} control signals remain deasserted to prevent unintended memory modifications.
+
+    \item The ALU-FPU result is also directed to a multiplexer that selects between the ALU-FPU output and data retrieved from memory. For R-format instructions, the multiplexer select signal is configured to choose the ALU-FPU output, which is then written to the destination register by asserting the \texttt{RegWrite} control signal in the Register File.
 \end{itemize}
 
-\section{Project Specifications}
+\subsection*{I-format Instruction Path}
 
-\subsection{ISA and Instruction Support}
-The processor implements the RV64 base integer ISA plus the following extensions:
 \begin{itemize}
-\item \textbf{I}: RV64 integer base instructions (load/store, arithmetic, logical, control flow).
-\item \textbf{M}: Integer multiply and divide.
-\item \textbf{F}: Single-precision floating point (IEEE-754) operations — implemented via an FPU unit integrated into the pipeline.
-\end{itemize}
-All R-type, I-type, S-type, B-type, U-type, and J-type instruction encodings described by the RISBU formats (as provided in the class RISC-V card) will be implemented, except \texttt{ecall} and \texttt{ebreak} which are intentionally omitted.
+    \item Similar to R-format instructions, the I-format instruction is first retrieved from the Instruction Memory, where the bits corresponding to the source and destination registers are extracted and forwarded to the Register File. The Register File outputs the values stored in the specified source registers.
 
-\section{Architecture Overview}
-Include an architectural block diagram here describing the major components:
-\begin{itemize}
-\item Instruction fetch unit (PC generation, instruction memory interface, branch prediction unit).
-\item Register file (integer and floating-point register files; note: F extension uses separate FP registers but can be architected as a single register file with type handling — decide in implementation).
-\item Integer ALU with multiply/divide unit (M extension); optionally a separate multiplier pipeline.
-\item Floating-Point Unit (FPU): single-precision adder/subtractor, multiplier, divide/sqrt (optional) and conversion units.
-\item Data memory interface (AXI-lite or simple synchronous SRAM interface depending on FPGA board).
-\item Pipeline control and hazard detection unit (forwarding paths, stall logic).
+    \item The Control Unit configures the \texttt{ALUSrc} control signal such that the multiplexer selects the immediate value rather than the source register value. These operands are then routed to the ALU-FPU block, where the ALU-FPU control signals determine the specific arithmetic or logical operation to be performed. The ALU-FPU output is connected to the address port of the Data Memory. For load operations, the \texttt{MemRead} control signal is asserted while the \texttt{MemWrite} control signal remains deasserted to prevent unintended memory modifications.
+
+    \item The ALU-FPU result is directed to a multiplexer that selects between the ALU-FPU output and data retrieved from memory. For load instructions, the multiplexer select signal is configured to choose the memory output, which is then written to the destination register by asserting the \texttt{RegWrite} control signal in the Register File. For non-load I-format instructions, the datapath flow follows the same sequence as R-format instructions.
+
+    \item For the \texttt{jalr} instruction, the value \texttt{PC+4} is forwarded to two multiplexers (controlled by \texttt{JumpSrc} and \texttt{UJSrc} select lines), which configure the destination register to receive \texttt{PC+4}. To compute \texttt{PC = rs1 + imm}, the ALU is utilized. A multiplexer selects between this computed value and \texttt{PC+4} for the next program counter value, with the selection controlled by the \texttt{JalrSrc} signal.
 \end{itemize}
 
-\section{Pipeline Design}
-This project follows a staged pipeline introduction. The baseline pipeline will be the classical 5-stage RISC pipeline:
-\begin{enumerate}
-\item Fetch (IF)
-\item Decode/Register Read (ID)
-\item Execute/ALU (EX)
-\item Memory Access (MEM)
-\item Write Back (WB)
-\end{enumerate}
+\subsection*{B-format Instruction Path}
 
-For floating-point operations the FPU may have a multi-cycle or pipelined implementation. During Phase 2 FP instructions will not be fully pipelined into the main pipeline; instead they will be handled via a blocking (stalling) FPU interface. Phase 3 will integrate the FPU such that FP instructions can flow through the pipeline with appropriate forwarding and hazard handling.
+For B-format instructions, the condition flags from the ALU are utilized instead of the ALU result itself. These flags determine whether \texttt{PC+imm} or \texttt{PC+4} becomes the next program counter value. The branch conditions are evaluated in the Branch Control block (\texttt{BCont}), with the specific branch condition type specified by the \texttt{BSrc} signal from the Control Unit. When the branch condition evaluates to true, the branch control signal is asserted and \texttt{PC+imm} is selected; otherwise, \texttt{PC+4} is selected to continue sequential execution.
 
-\subsection{Hazard Management}
-\paragraph{Data Hazards:} Implement standard forwarding paths from ALU/MEM/WB outputs to ALU inputs in ID/EX as required. When forwarding cannot resolve hazards (e.g., load-use hazards), the control logic will insert a bubble (stall).
+\subsection*{J-format Instruction Path}
 
-\paragraph{Control Hazards:} A simple static branch predictor (e.g., predict-not-taken or a 1-bit bimodal predictor) will be implemented in the IF/ID stage to reduce branch penalties. On misprediction the pipeline will flush incorrectly fetched instructions and update the PC.
+The execution process for J-format instructions is nearly identical to the \texttt{jalr} instruction, except that instead of using the ALU to compute \texttt{rs1 + imm}, a dedicated adder with inputs \texttt{PC} and \texttt{imm} is employed to calculate the target address.
 
-\section{Floating-Point Unit (FPU)}
-\subsection{Design Goals}
-\begin{itemize}
-\item Support single-precision (IEEE-754) arithmetic: add/sub, mul, fma (if feasible), comparisons, loads/stores, and conversions between integer and float.
-\item Provide interfaces for exception flags and rounding modes (to the extent required by the course specification).
-\item Offer both a simple single-cycle (for early phases) and a more efficient pipelined or multi-cycle implementation for final integration.
-\end{itemize}
+\subsection*{S-format Instruction Path}
 
-\subsection{Integration Strategy}
-During Phase 1, the FPU will be implemented as a functional unit callable from the EX stage but may take multiple cycles to complete, blocking the pipeline (stalling). During Phase 3 the FPU will present a pipelined interface with result-bypassing so that later instructions can make use of results via forwarding without unnecessary stalls.
+For S-format instructions, the effective address \texttt{rs1 + imm} is calculated through the ALU block, similar to I-format instructions. The value from register \texttt{rs2} is connected to the Write Data port of the Data Memory, and the \texttt{MemWrite} control signal is asserted to write the data to memory at the computed address.
 
-\section{Implementation Plan (Phases)}
-\subsection{Phase 1: Functional Processor without Pipelining (with FPU)}
-\begin{itemize}
-\item Implement a single-cycle or multi-cycle non-pipelined processor (control simpler to verify).
-\item Implement FPU as a multi-cycle combinational/sequential unit accessed from EX stage (pipeline stalls entire processor while FPU operates).
-\item Develop Verilog modules: instruction memory (ROM), datapath, control unit, register files, simple bus to external memory.
-\item Deliverables: RTL code, simulation testbenches for integer and FP instruction sets, synthesis report on FPGA.
-\end{itemize}
+\subsection*{U-format Instruction Path}
 
-\subsection{Phase 2: Pipeline Implementation without Pipelined FP}
-\begin{itemize}
-\item Convert datapath to a 5-stage pipelined design with registers between stages.
-\item Implement data forwarding and hazard detection for integer instructions.
-\item Integrate branch prediction and misprediction recovery logic.
-\item FPU remains non-pipelined; FP instructions will cause the pipeline to stall until FPU finishes.
-\item Deliverables: pipelined RTL, updated testbench, performance measurements (CPI estimates), FPGA bitstream.
-\end{itemize}
+A dedicated adder is placed adjacent to the immediate generation block. After the generated immediate is shifted left by 12 bits, a multiplexer controlled by the \texttt{USrc} signal selects between the two U-format operations: \texttt{lui} (load upper immediate) loads the shifted immediate directly, while \texttt{auipc} (add upper immediate to PC) adds the shifted immediate to the current program counter value.
 
-\subsection{Phase 3: FP Integration into Pipeline}
-\begin{itemize}
-\item Rework FPU into a pipelined or non-blocking multi-cycle unit with result tagging so that multiple FP operations can be in-flight.
-\item Add forwarding paths for FP results into integer and FP instructions as required.
-\item Handle FP-specific exceptions and rounding modes in control/status registers.
-\item Deliverables: fully integrated RTL, extended testbench including concurrent integer+FP sequences, final FPGA bitstream, performance evaluation.
-\end{itemize}
+\section*{Conclusion}
 
-\section{Verification and Testing}
-\subsection{Simulation}
-\begin{itemize}
-\item Unit-level testbenches for ALU, FPU, register files, and memory interfaces.
-\item Instruction-level tests using assembly programs that exercise all implemented instructions (edge cases, saturations, corner cases for FP like NaN/Inf/denormals if supported).
-\item Automated regression and self-checking testbenches where simulation results are compared against a reference model (e.g., spike or a golden C model).
-\end{itemize}
+The fundamental arithmetic and logic components of the RV64IM processor have been successfully designed and implemented. These units form the execution core that will be integrated into the complete datapath. The modular design approach allows for thorough testing at each level and will facilitate the transition to a pipelined architecture in Phase 2 of the project.
 
 \end{document}
+
 
