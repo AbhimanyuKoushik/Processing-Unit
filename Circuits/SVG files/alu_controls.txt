@@ -1,0 +1,63 @@
+FPU -> 0000 Fadd, 0001 Fsub, 0010 Fmul, 0011 Fdiv, 
+    0100 Fsqrt,
+    0101 Fsign injection, 0110 Fsign neg injection, 0111 Fsign Xor injection,
+    1000 Fmin, 1001 Fmax,
+    1010 - fcvt.s.w, 1011 - fcvt.s.wu, 1100 - fcvt.w.s, 1101 - fcvt.wu.s 
+    100XX - feq, flt, fle, fclass
+
+ALU control input (Opcode, funct3 and funct 7) - output (MUX output, input to blocks) only in R-format ->
+
+Add -> 0110011 000 0000000 - 000 00
+Sub -> 0110011 000 0100000 - 000 01
+Slt -> 0110011 010 0000000 - 000 10
+Sltu -> 0110011 011 0000000 - 000 11
+Mul -> 0110011 000 0000001 - 001 00
+Mulh -> 0110011 001 0000001 - 001 01
+Mulhsu -> 0110011 010 0000001 - 001 10
+Mulhu -> 0110011 011 0000001 - 001 11
+Div -> 0110011 100 0000001 - 010 00 
+Divu -> 0110011 101 0000001 - 010 01
+rem -> 0110011 110 0000001 - 010 10
+remu -> 0110011 111 0000001 - 010 11
+Sll -> 0110011 001 0000000 - 011
+srl -> 0110011 101 0000000 - 100 0
+sra -> 10110011 01 0100000 - 100 1
+Xor -> 0110011 100 0000000 - 101
+OR -> 0110011 110 0000000 - 110
+And -> 0110011 111 0000000 - 111
+
+
+Addi -> 0010011 000 - 000 00
+Slti -> 0010011 010 - 000 10
+Sltui -> 0010011 011 - 000 11
+Slli -> 0010011 001 - 011
+srli -> 0010011 101 - 100 0
+srai -> 0010011 101 - 100 1
+Xori -> 0010011 100 - 101
+ORi -> 0010011 110 - 110
+Andi -> 0010011 111 - 111
+
+lb -> 0000011 000 - 000 00
+lh -> 0000011 001 - 000 00
+lw -> 0000011 010 - 000 00
+ld -> 0000011 011 - 000 00
+lbu -> 0000011 100 - 000 00
+lhu -> 0000011 101 - 000 00
+
+sb -> 0100011 000 - 000 00
+sh -> 0100011 001 - 000 00
+sw -> 0100011 010 - 000 00
+sd -> 0100011 011 - 000 00
+
+
+
+
+If I-format is used then if funct3 is not 101 set funct7 to 0, if funct3 is 101 then set output bit as funct7[5] 
+
+Outside ALU control, a small block lies which decides if the instruction is I-format or R-format, in case it is I-format checks what is funct3, if funct3 now is 101 then sets funct7 as 0100000, else sets funct7 as 0000000. Use MUx pls...
+
+
+
+
+
+
