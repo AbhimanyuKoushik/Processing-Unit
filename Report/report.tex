@@ -162,7 +162,7 @@ For S-format instructions, the effective address \texttt{rs1 + imm} is calculate
 
 A dedicated adder is placed adjacent to the immediate generation block. After the generated immediate is shifted left by 12 bits, a multiplexer controlled by the \texttt{USrc} signal selects between the two U-format operations: \texttt{lui} (load upper immediate) loads the shifted immediate directly, while \texttt{auipc} (add upper immediate to PC) adds the shifted immediate to the current program counter value.
 
-\section*{Register File}
+\section{Register File}
 
 The Register File contains 64 registers: the first 32 serve as general-purpose integer registers, while the next 32 are dedicated to floating-point operations. Register addresses are extracted from the instruction encoding. For floating-point instructions, the appropriate register is selected by adding 32 to the specified address. For integer instructions, the address is used directly without modification. To support this addressing scheme, a small adder computes the offset by adding 32 to the register address field. A multiplexer then selects between the original address and the offset address based on a control signal from the Control Unit, which indicates whether the instruction operates on integer or floating-point registers.
 
@@ -196,7 +196,14 @@ When a memory access requires storing data beyond the eighth sub-block (address 
 
 This parallel memory architecture is specifically designed to exploit the pipelined nature of BRAM on the PYNQ board. In a conventional linear memory arrangement, the pipelined BRAM requires two clock cycles to retrieve a single byte, resulting in memory operations taking more than three cycles to complete.
 
-The implemented 8-way parallel architecture significantly reduces this latency. Memory load and store operations are now complete in a maximum of three clock cycles in the worst case, with many operations completing faster depending on alignment. This design choice provides substantial performance improvements for memory-intensive operations while maintaining compatibility with the RISC-V memory model. To support this two cycle stall, a small counter is used near the PC update point such that when the counter is not in the initial configuration, the PC will remain the same, turn off the changes in the register file through an enable. This has not been implemented yet.
+The implemented 8-way parallel architecture significantly reduces this latency. Memory load and store operations are now complete in a maximum of three clock cycles in the worst case, with many operations completing faster depending on alignment. This design choice provides substantial performance improvements for memory-intensive operations while maintaining compatibility with the RISC-V memory model. To support this two cycle stall, a small counter (initialised to \texttt{100}) is used near the PC update point such that when the counter is not in the initial configuration, the PC will remain the same, turn off the changes in the register file through an enable. This has not been implemented yet.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{FSM.png}
+    \caption{Counter used}
+    \label{fig:placeholder}
+\end{figure}
 
 \subsection*{Initial Idea}
 The initial design approach utilised a similar parallel sub-block architecture as described below, but with a significant constraint: all data, regardless of its size, was required to be stored starting from a memory location where the lower three address bits were \texttt{000}. While this alignment simplification eased the initial implementation, it introduced substantial inefficiencies. This approach wasted considerable memory space by leaving gaps between non-aligned accesses. Furthermore, it failed to accurately model real-world memory behavior, where data can overlap and occupy any byte-aligned address. The inability to support arbitrary byte addressing was a fundamental limitation that necessitated a redesign to properly implement the RISC-V memory model.
