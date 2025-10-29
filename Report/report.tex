@@ -153,6 +153,42 @@ For S-format instructions, the effective address \texttt{rs1 + imm} is calculate
 
 A dedicated adder is placed adjacent to the immediate generation block. After the generated immediate is shifted left by 12 bits, a multiplexer controlled by the \texttt{USrc} signal selects between the two U-format operations: \texttt{lui} (load upper immediate) loads the shifted immediate directly, while \texttt{auipc} (add upper immediate to PC) adds the shifted immediate to the current program counter value.
 
+\section*{Data Memory}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{data_memory.png}
+    \caption{Data Memory Architecture}
+    \label{fig:data_memory}
+\end{figure}
+
+\subsection*{Memory Organization}
+
+The Data Memory block is organized into eight parallel sub-blocks, each 8 bits wide. This parallel architecture leverages the physical characteristics of Block RAM (BRAM) on the PYNQ FPGA board to achieve optimal performance.
+
+\subsection*{Address Mapping and Data Placement}
+
+The lower three bits of the memory address determine which sub-block receives the data. Specifically, when the address bits \texttt{[2:0]} equal \texttt{000}, data is stored in the first block; when \texttt{001}, data is stored in the second block, and so forth through all eight blocks. The number of sub-blocks utilized depends on the data width specified by the instruction:
+
+\begin{itemize}
+    \item \textbf{Byte operations} (\texttt{lb}, \texttt{sb}): Utilize 1 sub-block (8 bits)
+    \item \textbf{Half-word operations} (\texttt{lh}, \texttt{sh}): Utilize 2 sub-blocks (16 bits)
+    \item \textbf{Word operations} (\texttt{lw}, \texttt{sw}): Utilize 4 sub-blocks (32 bits)
+    \item \textbf{Double-word operations} (\texttt{ld}, \texttt{sd}): Utilize 8 sub-blocks (64 bits)
+\end{itemize}
+
+When a memory access requires storing data beyond the eighth sub-block (address bits \texttt{[2:0]} exceeding \texttt{111}), the addressing wraps around to the first sub-block, maintaining the circular nature of the 8-block architecture.
+
+\subsection*{Performance Advantages}
+
+This parallel memory architecture is specifically designed to exploit the pipelined nature of BRAM on the PYNQ board. In a conventional linear memory arrangement, the pipelined BRAM requires two clock cycles to retrieve a single byte, resulting in memory operations taking more than three cycles to complete.
+
+The implemented 8-way parallel architecture significantly reduces this latency. Memory load and store operations now complete in a maximum of three clock cycles in the worst case, with many operations completing faster depending on alignment. This design choice provides substantial performance improvements for memory-intensive operations while maintaining compatibility with the RISC-V memory model.
+
+\subsection*{Initial Idea}
+The initial design approach utilised a similar parallel sub-block architecture as described below, but with a significant constraint: all data, regardless of its size, was required to be stored starting from a memory location where the lower three address bits were \texttt{000}. While this alignment simplification eased the initial implementation, it introduced substantial inefficiencies. This approach wasted considerable memory space by leaving gaps between non-aligned accesses. Furthermore, it failed to accurately model real-world memory behavior, where data can overlap and occupy any byte-aligned address. The inability to support arbitrary byte addressing was a fundamental limitation that necessitated a redesign to properly implement the RISC-V memory model.
+
+
 \section*{Conclusion}
 
 The fundamental arithmetic and logic components of the RV64IM processor have been successfully designed and implemented. These units form the execution core that will be integrated into the complete datapath. The modular design approach allows for thorough testing at each level and will facilitate the transition to a pipelined architecture in Phase 2 of the project.
