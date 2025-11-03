@@ -1,57 +1,47 @@
-module data_memory(input wire [63:0] address,
-                   input wire [63:0] write_data,
-                   input wire mem_read,
-                   input wire [1:0] mem_write,
+module data_memory(input wire [19:0] address,
+                   input wire [63:0] data,
+                   input wire write_enable,
+                   input wire [1:0] store_type,
                    input wire clk,
-                   output reg [63:0] result);
+                   output wire [63:0] read_data);
 
-wire [23:0] byte_address;
+wire [2:0] column;
+wire [16:0] row;
 
-reg [20:0] mem_block_1 [7:0];
-reg [20:0] mem_block_2 [7:0];
-reg [20:0] mem_block_3 [7:0];
-reg [20:0] mem_block_4 [7:0];
-reg [20:0] mem_block_5 [7:0];
-reg [20:0] mem_block_6 [7:0];
-reg [20:0] mem_block_7 [7:0];
-reg [20:0] mem_block_8 [7:0];
+assign column = address[2:0];
+assign row = address[19:3];
 
-assign byte_address = address[23:0];
+reg [7:0] write_subunits;
 
-always @(posedge clk) begin
-    case (byte_address[2:0])
-        3'b000: begin
-            mem_block_1[7:0] = write_data[7:0];
-            case (mem_write)
-                2'b01, 2'b10, 2'b11: mem_block_2 = write_data[7:0]; // half word >=
-                2'b10, 2'b11: begin 
-                    mem_block_3 = write_data[23:16]; // word >=
-                    mem_block_4 = write_data[31:24];
-                    end
-                            
-                2'b11: begin 
-                    mem_block_5 = write_data[39:32]; // double word
-                    mem_block_6 = write_data[47:40];
-                    mem_block_7 = write_data[55:48];
-                    mem_block_8 = write_data[63:56];
-                    end
-            endcase
+always @(*) begin
+    case (store_type)
+        2'b00: write_subunits = 8'b00000001; // If store_type == byte, write in 1 byte
+        2'b01: write_subunits = 8'b00000011; // If it is halfword then 2 bytes
+        2'b10: write_subunits = 8'b00001111; // If it is word then in 4
+        2'b11: write_subunits = 8'b11111111; // If it is double word then 8
+        default: write_subunits = 8'b00000000;
+    endcase
+end
 
-        3'b001: begin
-            mem_block_2[7:0] = write_data[7:0];
-            case (mem_write)
-                2'b01, 2'b10, 2'b11: mem_block_3 = write_data[7:0]; // half word >=
-                2'b10, 2'b11: begin 
-                    mem_block_4 = write_data[23:16]; // word >=
-                    mem_block_5 = write_data[31:24];
-                    end
-                            
-                2'b11: begin 
-                    mem_block_6 = write_data[39:32]; // double word
-                    mem_block_7 = write_data[47:40];
-                    mem_block_8 = write_data[55:48];
-                    mem_block_1 = write_data[63:56];
-                    end
-            endcase
+wire [7:0] rotated_write_subunits;
+wire [63:0] rotated_data;
 
+assign rotated_data = (data << (column << 3)) | (data >> (64 - (column << 3)));
+assign rotated_write_subunits = (write_subunits << column) | (write_subunits >> (8 - column)); // circular shift by column
 
+wire [63:0] unrotated_load_results;
+
+genvar i;
+generate
+    for(i = 0; i < 8; i++) begin : subunits
+        mem_subunit subunit_inst(.address(row+((i + column) >> 3)),
+                    .byte_data(rotated_data[(i << 3) + 7 : (i << 3)]),
+                    .write_enable(rotated_write_subunits[i] & write_enable),
+                    .clk(clk),
+                    .result(unrotated_load_results[(i << 3) + 7 : (i << 3)]));
+    end
+endgenerate
+
+assign read_data = (unrotated_load_results >> (column << 3)) | (unrotated_load_results << (64 - (column << 3)));
+
+endmodule
