@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2026/dev/Arch Linux) (preloaded format=pdflatex 2025.8.24)  29 OCT 2025 22:14
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2026/dev/Arch Linux) (preloaded format=pdflatex 2025.8.24)  29 OCT 2025 22:27
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -325,18 +325,28 @@ Package pdftex.def Info: data_memory.png  used on input line 173.
 [8]
 
 [9 <./data_memory.png>]
+<FSM.png, id=63, 7682.7025pt x 5121.1325pt>
+File: FSM.png Graphic file (type png)
+<use FSM.png>
+Package pdftex.def Info: FSM.png  used on input line 203.
+(pdftex.def)             Requested size: 234.8775pt x 156.5186pt.
 
-[10] (./report.aux)
+
+[10 <./FSM.png>] (./report.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
  ) 
 Here is how much of TeX's memory you used:
- 4099 strings out of 475171
- 60840 string characters out of 5767095
+ 4106 strings out of 475171
+ 60937 string characters out of 5767095
  464372 words of memory out of 5000000
- 27085 multiletter control sequences out of 15000+600000
+ 27092 multiletter control sequences out of 15000+600000
  564723 words of font info for 57 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  57i,6n,65p,812b,266s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -351,10 +361,10 @@ public/amsfonts/cm/cmr7.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmsy10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb><
 /usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/tex
 mf-dist/fonts/type1/public/cm-super/sfrm1000.pfb>
-Output written on report.pdf (10 pages, 2383758 bytes).
+Output written on report.pdf (10 pages, 2513840 bytes).
 PDF statistics:
- 122 PDF objects out of 1000 (max. 8388607)
+ 124 PDF objects out of 1000 (max. 8388607)
  65 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 46 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 51 words of extra memory for PDF output out of 10000 (max. 10000000)
 
