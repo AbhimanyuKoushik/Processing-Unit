@@ -17,6 +17,6 @@ always @(*) begin
         default: out = $unsigned(in1) < $unsigned(in2) ? 1 : 0;
     endcase
 end
-
+q
 endmodule
 
