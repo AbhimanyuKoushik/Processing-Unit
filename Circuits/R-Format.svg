@@ -24,9 +24,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="0.12160143"
-     inkscape:cx="3869.1979"
-     inkscape:cy="727.78749"
+     inkscape:zoom="0.17197039"
+     inkscape:cx="4951.4337"
+     inkscape:cy="1258.9376"
      inkscape:window-width="1266"
      inkscape:window-height="748"
      inkscape:window-x="0"
@@ -2186,14 +2186,14 @@
          y="475.66925"
          style="stroke-width:0">UJSrc</tspan></text>
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1.40958;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
-       d="M 1431.2384,441.28353 V 398.35627"
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1.41;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+       d="M 1243.0779,440.34361 V 392.38476"
        id="path46"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
     <path
-       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1.41087;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
-       d="M 1669.6983,440.56256 H 1431.936"
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1.41;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+       d="m 1669.6983,440.56256 h -427.467"
        id="path47"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
